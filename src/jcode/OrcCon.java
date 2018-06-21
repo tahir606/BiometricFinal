@@ -1,5 +1,7 @@
 package jcode;
 
+import objects.FingerPrint;
+
 import java.sql.*;
 
 public class OrcCon {
@@ -39,14 +41,15 @@ public class OrcCon {
         }
     }
 
-    public void insertFingerPrint(byte[] bytes) {
+    public void insertFingerPrint(FingerPrint fp) {
 
-        String query = "INSERT INTO EMP_PRINTS (EP_ID, EP_ISO)" +
-                " VALUES ((SELECT NVL(MAX(EP_ID),0)+1 FROM EMP_PRINTS),?) ";
+        String query = "INSERT INTO EMP_PRINTS (EP_ID, EP_ISO, EP_OWNER)" +
+                " VALUES ((SELECT NVL(MAX(EP_ID),0)+1 FROM EMP_PRINTS),?,?) ";
 
         try {
             PreparedStatement statement = static_con.prepareStatement(query);
-            statement.setBytes(1, bytes);
+            statement.setBytes(1, fp.getISO19794());
+            statement.setString(2, fp.getOwner());
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

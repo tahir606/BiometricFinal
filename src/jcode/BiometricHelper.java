@@ -2,14 +2,19 @@ package jcode;
 
 import SecuGen.FDxSDKPro.jni.*;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+
 public class BiometricHelper {
 
     private static JSGFPLib sgfplib;
-    private long err;
+    private static SGDeviceInfoParam deviceInfo;
+    private static byte kbBuffer[] = new byte[100];
+    private static long err;
 
     public BiometricHelper() {
         if (sgfplib == null) {
-            System.out.println("Instantiating JSGFPLib Object");
             sgfplib = new JSGFPLib();
             if ((sgfplib != null) && (sgfplib.jniLoadStatus != SGFDxErrorCode.SGFDX_ERROR_JNI_DLLLOAD_FAILED)) {
                 System.out.println(sgfplib);
@@ -43,7 +48,7 @@ public class BiometricHelper {
             System.out.println("GetLastError returned : [" + err + "]");
 
             // GetDeviceInfo()
-            SGDeviceInfoParam deviceInfo = new SGDeviceInfoParam();
+            deviceInfo = new SGDeviceInfoParam();
             err = sgfplib.GetDeviceInfo(deviceInfo);
             System.out.println("GetDeviceInfo returned : [" + err + "]");
             System.out.println("\tdeviceInfo.DeviceSN:    [" + new String(deviceInfo.deviceSN()).trim() + "]");
@@ -59,13 +64,11 @@ public class BiometricHelper {
             System.out.println("\tdeviceInfo.ImageWidth:  [" + deviceInfo.imageWidth + "]");
 
             setLed(true);
-
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
             setLed(false);
         }
     }
@@ -74,56 +77,70 @@ public class BiometricHelper {
         err = sgfplib.SetLedOn(b);
     }
 
-    public byte[] scanForPrint() {
+    public byte[] scanForPrint() {  //Returns in RAW Format
         int[] quality = new int[1];
+        byte[] imageBuffer;
+
+        // getImage()
+        err = sgfplib.SetLedOn(true);
+        System.out.println("SetLedOn returned : [" + err + "]");
+        System.out.print("Capture 1. press <ENTER> ");
+        imageBuffer = new byte[deviceInfo.imageHeight * deviceInfo.imageWidth];
+        try {
+            System.in.read(kbBuffer);
+            err = sgfplib.GetImage(imageBuffer);
+            System.out.println("GetImage returned : [" + err + "]");
+            if (err == SGFDxErrorCode.SGFDX_ERROR_NONE) {
+                err = sgfplib.GetImageQuality(deviceInfo.imageWidth, deviceInfo.imageHeight, imageBuffer, quality);
+                System.out.println("GetImageQuality returned : [" + err + "]");
+                System.out.println("Image Quality is : [" + quality[0] + "]");
+                return imageBuffer;
+            } else {
+                System.out.println("ERROR: Fingerprint image capture failed for sample1.");
+                return null; //Cannot continue test if image not captured
+            }
+        } catch (IOException e) {
+            System.out.println("Exception reading keyboard : " + e);
+            return null;
+        }
+    }
+
+    public byte[] convertRawtoISO19794(byte[] imageBuffer) {
         int[] maxSize = new int[1];
+        byte[] ISOminutiaeBuffer1;
         int[] size = new int[1];
+
         SGFingerInfo fingerInfo = new SGFingerInfo();
         fingerInfo.FingerNumber = SGFingerPosition.SG_FINGPOS_LI;
-        fingerInfo.ImageQuality = quality[0];
+//        fingerInfo.ImageQuality = quality[0];
         fingerInfo.ImpressionType = SGImpressionType.SG_IMPTYPE_LP;
         fingerInfo.ViewNumber = 1;
 
+        // Set Template format ISO19794
+        err = sgfplib.SetTemplateFormat(SGFDxTemplateFormat.TEMPLATE_FORMAT_ISO19794);
+        System.out.println("SetTemplateFormat returned : [" + err + "]");
 
+        // Get Max Template Size for ISO19794
+        err = sgfplib.GetMaxTemplateSize(maxSize);
+        System.out.println("GetMaxTemplateSize returned : [" + err + "]");
+        System.out.println("Max ISO19794 Template Size is : [" + maxSize[0] + "]");
 
-//////////////////////////////////////////////////////////////////////////////
-// Finger 1
-        ///////////////////////////////////////////////
-        // getImage() - 1st Capture
-        System.out.println("Call SetLedOn(true)");
-        err =sgfplib.SetLedOn(true);
-        System.out.println("SetLedOn returned : [" + err + "]");
-        System.out.print("Capture 1. Please place [" + finger + "] on sensor with LEDs on and press <ENTER> ");
-        imageBuffer1 = new byte[deviceInfo.imageHeight*deviceInfo.imageWidth];
-        try
-        {
-            System.in.read(kbBuffer);
-            System.out.println("Call GetImage()");
-            err = sgfplib.GetImage(imageBuffer1);
-            System.out.println("GetImage returned : [" + err + "]");
-            if (err == SGFDxErrorCode.SGFDX_ERROR_NONE)
-            {
-                err = sgfplib.GetImageQuality(deviceInfo.imageWidth, deviceInfo.imageHeight, imageBuffer1, quality);
-                System.out.println("GetImageQuality returned : [" + err + "]");
-                System.out.println("Image Quality is : [" + quality[0] + "]");
-                fout = new FileOutputStream(finger + "1.raw");
-                fp = new PrintStream(fout);
-                fp.write(imageBuffer1,0, imageBuffer1.length);
-                fp.close();
-                fout.close();
-                fp = null;
-                fout = null;
-            }
-            else
-            {
-                System.out.println("ERROR: Fingerprint image capture failed for sample1.");
-                return; //Cannot continue test if image not captured
-            }
+        // Create ISO19794 Template for Finger
+        ISOminutiaeBuffer1 = new byte[maxSize[0]];
+        err = sgfplib.CreateTemplate(fingerInfo, imageBuffer, ISOminutiaeBuffer1);
+        System.out.println("CreateTemplate returned : [" + err + "]");
+        err = sgfplib.GetTemplateSize(ISOminutiaeBuffer1, size);
+        System.out.println("GetTemplateSize returned : [" + err + "]");
+        System.out.println("ISO19794 Template Size is : [" + size[0] + "]");
+        if (err == SGFDxErrorCode.SGFDX_ERROR_NONE) {
+            return ISOminutiaeBuffer1;
         }
-        catch (IOException e)
-        {
-            System.out.println("Exception reading keyboard : " + e);
-        }
+        return null;
     }
+
+    public byte[] scanAndReturnISO() {
+        return convertRawtoISO19794(scanForPrint());
+    }
+
 
 }
