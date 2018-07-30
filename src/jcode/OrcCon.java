@@ -1,14 +1,20 @@
 package jcode;
 
+import objects.Employee;
 import objects.FingerPrint;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OrcCon {
 
-    private String ipAddress = "";
-    private String user = "";
-    private String pass = "";
+    private static String ipAddress = "";
+    private static String user = "";
+    private static String pass = "";
 
     private static Connection static_con;
 
@@ -41,24 +47,71 @@ public class OrcCon {
         }
     }
 
-    public void insertFingerPrint(FingerPrint fp) {
-
-        String query = "INSERT INTO EMP_PRINTS (EP_ID, EP_ISO, EP_OWNER)" +
-                " VALUES ((SELECT NVL(MAX(EP_ID),0)+1 FROM EMP_PRINTS),?,?) ";
+    public boolean authenticateLogin(String username, String password) {
+        String query = "SELECT UNAME FROM USRACCOUNT " +
+                "WHERE UNAME = ? " +
+                "AND PASWD = ? ";
 
         try {
             PreparedStatement statement = static_con.prepareStatement(query);
-            statement.setBytes(1, fp.getISO19794());
-            statement.setString(2, fp.getOwner());
+            statement.setString(1, username);
+            statement.setString(2, password);
+            ResultSet set = statement.executeQuery();
+
+            if (!set.isBeforeFirst())
+                return false;
+            else
+                return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public void insertFingerPrint(FingerPrint fp, int no) {
+
+        String query = "INSERT INTO EMP_PRINTS (ECODE, EISO" + String.valueOf(no) + ") " +
+                " VALUES (?,?) ";
+
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            statement.setInt(1, fp.getCode());
+            if (no == 1)
+                statement.setBytes(2, fp.getISO19794_one());
+            else if (no == 2)
+                statement.setBytes(2, fp.getISO19794_two());
             statement.executeUpdate();
+            statement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
     }
 
-    public byte[] getFingerPrint(int id) {
-        String query = "SELECT EP_ISO FROM EMP_PRINTS WHERE EP_ID = ? ";
+    public void updateFingerPrint(FingerPrint fp, int no) {
+
+        String query = "UPDATE EMP_PRINTS SET EISO" + String.valueOf(no) + " = ? " +
+                " WHERE ECODE = ? ";
+
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            if (no == 1)
+                statement.setBytes(1, fp.getISO19794_one());
+            else if (no == 2)
+                statement.setBytes(1, fp.getISO19794_two());
+            statement.setInt(2, fp.getCode());
+            statement.executeUpdate();
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public byte[] getFingerPrint(int id, int no) {
+        String query = "SELECT EP_ISO" + String.valueOf(no) + " FROM EMP_PRINTS WHERE EP_ID = ? ";
 
         try {
             PreparedStatement statement = static_con.prepareStatement(query);
@@ -76,4 +129,130 @@ public class OrcCon {
         return null;
     }
 
+    public boolean checkForFingerprint(int id) {
+        String query = " SELECT EISO1, EISO2 FROM EMP_PRINTS WHERE ECODE = ? ";
+
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            statement.setInt(1, id);
+            ResultSet set = statement.executeQuery();
+
+            if (!set.next()) {
+                return false;
+            } else {
+                return true;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public List<FingerPrint> getAllFingerPrints() {
+        String query = "SELECT EP_ID, EP_OWNER, EPISO1, EPISO2  FROM EMP_PRINTS";
+
+        List<FingerPrint> listOfPrints = new ArrayList<>();
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            ResultSet set = statement.executeQuery();
+
+            while (set.next()) {
+                FingerPrint print = new FingerPrint();
+                print.setCode(set.getInt("EP_ID"));
+                print.setOwner(set.getString("EP_OWNER"));
+                print.setISO19794_one(set.getBytes("EP_ISO1"));
+                print.setISO19794_two(set.getBytes("EP_ISO2"));
+                listOfPrints.add(print);
+            }
+            set.close();
+            statement.close();
+            return listOfPrints;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public List<Employee> getAllEmployees() {
+        String query = "SELECT ECODE, ENAME, FNAME, PHONE FROM EMPLOYEE_MASTER WHERE LDATE IS NULL ORDER BY ENAME";
+
+        List<Employee> listOfEmployees = new ArrayList<>();
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            ResultSet set = statement.executeQuery();
+
+            while (set.next()) {
+                Employee emp = new Employee();
+                emp.setCode(set.getInt("ECODE"));
+                emp.setName(set.getString("ENAME"));
+                emp.setFatherName(set.getString("FNAME"));
+                emp.setPhone(set.getString("PHONE"));
+                getEmployeeDetails(emp);
+                listOfEmployees.add(emp);
+            }
+            set.close();
+            statement.close();
+            return listOfEmployees;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public void getEmployeeDetails(Employee emp) {
+        String query = "SELECT (SELECT EISO1 FROM EMP_PRINTS EI WHERE EI.ECODE = ?) AS EISO1, (SELECT EISO2 FROM EMP_PRINTS EJ WHERE EJ.ECODE = ?) AS EISO2,(SELECT PHOTT FROM EMPLOYEE_IMAGES EP WHERE EP.ECODE = ?) AS PHOTT FROM DUAL";
+
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            statement.setInt(1, emp.getCode());
+            statement.setInt(2, emp.getCode());
+            statement.setInt(3, emp.getCode());
+
+            ResultSet set = statement.executeQuery();
+            while (set.next()) {
+                emp.setPrint(new FingerPrint(set.getBytes("EISO1"),set.getBytes("EISO2")));
+                Blob blob = set.getBlob("PHOTT");
+                if (blob != null) {
+                    byte b[] = blob.getBytes(1, (int) blob.length());
+                    FileOutputStream output = null;
+                    try {
+                        output = new FileOutputStream("img/" + emp.getCode());
+                        output.write(b);
+                        output.close();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            set.close();
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateSalary(Employee emp, String month, int year) {
+        String query = "UPDATE SAVED_SALARY SET  BIOCHECK = 'Y' " +
+                " WHERE ECODE = ? " +
+                " AND EDATE = ? ";
+
+        PreparedStatement statement = null;
+
+        try {
+            statement = static_con.prepareStatement(query);
+            statement.setInt(1, emp.getCode());
+            statement.setString(2, "1-" + month + "-" + year);
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXListView?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="445.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="registration.RegistrationController">
+    <children>
+        <JFXListView fx:id="list_employees" layoutY="28.0" prefHeight="372.0" prefWidth="263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="60.0" />
+        <AnchorPane fx:id="edit_pane" layoutX="244.0" layoutY="60.0" prefHeight="385.0" prefWidth="330.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="270.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="60.0">
+            <children>
+                <VBox layoutX="326.0" layoutY="6.0" prefHeight="335.0" prefWidth="267.0" spacing="8.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                    <children>
+                        <HBox prefHeight="7.0" prefWidth="267.0" />
+                        <Label fx:id="label_name" text="Employee Name">
+                            <font>
+                                <Font name="Arial Narrow Bold" size="20.0" />
+                            </font>
+                     <VBox.margin>
+                        <Insets left="10.0" />
+                     </VBox.margin>
+                        </Label>
+                        <HBox prefHeight="7.0" prefWidth="267.0" />
+                        <HBox prefHeight="7.0" prefWidth="267.0" spacing="5">
+                            <children>
+                                <ImageView fx:id="img_dp" fitHeight="150.0" fitWidth="185.0" pickOnBounds="true" preserveRatio="true" />
+                                <VBox fx:id="vbox_details" prefHeight="150.0" prefWidth="262.0" spacing="3.0" />
+                            </children>
+                        </HBox>
+                  <HBox prefHeight="273.0" prefWidth="328.0" />
+                        <HBox alignment="BOTTOM_RIGHT" prefHeight="9.0" prefWidth="320.0">
+                     <children>
+                            <JFXButton fx:id="btn_add_one" buttonType="RAISED" mnemonicParsing="false" prefHeight="14.0" prefWidth="150.0" ripplerFill="BLACK" style="-fx-background-color: #d0ebed;" text="Add Fingerprint 1">
+                                <font>
+                                    <Font name="Calibri" size="14.0" />
+                                </font>
+                           <cursor>
+                              <Cursor fx:constant="DEFAULT" />
+                           </cursor>
+                            </JFXButton>
+                     </children></HBox>
+                  <HBox alignment="BOTTOM_RIGHT" prefHeight="7.0" prefWidth="267.0">
+                     <children>
+                        <JFXButton fx:id="btn_add_two" buttonType="RAISED" mnemonicParsing="false" prefHeight="20.0" prefWidth="150.0" ripplerFill="BLACK" style="-fx-background-color: #d0ebed;" text="Add Fingerprint 2">
+                           <font>
+                              <Font name="Calibri" size="14.0" />
+                           </font>
+                           <cursor>
+                              <Cursor fx:constant="DEFAULT" />
+                           </cursor>
+                        </JFXButton>
+                     </children>
+                  </HBox>
+                    </children>
+                </VBox>
+            </children>
+        </AnchorPane>
+      <JFXTextField fx:id="edit_search" layoutY="35.0" prefHeight="25.0" prefWidth="263.0" promptText="Search" AnchorPane.topAnchor="35.0" />
+      <Label alignment="CENTER" prefHeight="17.0" prefWidth="600.0" text="Registration Panel" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="5.0">
+         <font>
+            <Font name="Calibri" size="24.0" />
+         </font>
+      </Label>
+    </children>
+</AnchorPane>

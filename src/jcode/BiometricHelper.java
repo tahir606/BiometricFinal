@@ -42,7 +42,9 @@ public class BiometricHelper {
             // OpenDevice()
             err = sgfplib.OpenDevice(SGPPPortAddr.AUTO_DETECT);
             System.out.println("OpenDevice returned : [" + err + "]");
-
+            if (err != 0) {
+                return;
+            }
             // GetError()
             err = sgfplib.GetLastError();
             System.out.println("GetLastError returned : [" + err + "]");
@@ -63,18 +65,18 @@ public class BiometricHelper {
             System.out.println("\tdeviceInfo.ImageHeight: [" + deviceInfo.imageHeight + "]");
             System.out.println("\tdeviceInfo.ImageWidth:  [" + deviceInfo.imageWidth + "]");
 
-            setLed(true);
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            setLed(false);
+//            setLed(true);
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            setLed(false);
         }
     }
 
-    public void setLed(boolean b) {
-        err = sgfplib.SetLedOn(b);
+    public long setLed(boolean b) {
+        return sgfplib.SetLedOn(b);
     }
 
     public byte[] scanForPrint() {  //Returns in RAW Format
@@ -84,28 +86,31 @@ public class BiometricHelper {
         // getImage()
         err = sgfplib.SetLedOn(true);
         System.out.println("SetLedOn returned : [" + err + "]");
-        System.out.print("Capture 1. press <ENTER> ");
+//        System.out.print("Press Enter to Scan: ");
         imageBuffer = new byte[deviceInfo.imageHeight * deviceInfo.imageWidth];
-        try {
-            System.in.read(kbBuffer);
-            err = sgfplib.GetImage(imageBuffer);
-            System.out.println("GetImage returned : [" + err + "]");
-            if (err == SGFDxErrorCode.SGFDX_ERROR_NONE) {
-                err = sgfplib.GetImageQuality(deviceInfo.imageWidth, deviceInfo.imageHeight, imageBuffer, quality);
-                System.out.println("GetImageQuality returned : [" + err + "]");
-                System.out.println("Image Quality is : [" + quality[0] + "]");
-                return imageBuffer;
-            } else {
-                System.out.println("ERROR: Fingerprint image capture failed for sample1.");
-                return null; //Cannot continue test if image not captured
-            }
-        } catch (IOException e) {
-            System.out.println("Exception reading keyboard : " + e);
+//            System.in.read(kbBuffer);
+        System.out.println("Scanning..");
+        err = sgfplib.GetImage(imageBuffer);
+        System.out.println("GetImage returned : [" + err + "]");
+        if (err != 0) {
+            sgfplib.SetLedOn(false);
             return null;
+        }
+        if (err == SGFDxErrorCode.SGFDX_ERROR_NONE) {
+            err = sgfplib.GetImageQuality(deviceInfo.imageWidth, deviceInfo.imageHeight, imageBuffer, quality);
+            System.out.println("GetImageQuality returned : [" + err + "]");
+            System.out.println("Image Quality is : [" + quality[0] + "]");
+            return imageBuffer;
+        } else {
+            System.out.println("ERROR: Fingerprint image capture failed for sample1.");
+            return null; //Cannot continue test if image not captured
         }
     }
 
     public byte[] convertRawtoISO19794(byte[] imageBuffer) {
+        if (imageBuffer == null)
+            return null;
+
         int[] maxSize = new int[1];
         byte[] ISOminutiaeBuffer1;
         int[] size = new int[1];
@@ -119,7 +124,6 @@ public class BiometricHelper {
         // Set Template format ISO19794
         err = sgfplib.SetTemplateFormat(SGFDxTemplateFormat.TEMPLATE_FORMAT_ISO19794);
         System.out.println("SetTemplateFormat returned : [" + err + "]");
-
         // Get Max Template Size for ISO19794
         err = sgfplib.GetMaxTemplateSize(maxSize);
         System.out.println("GetMaxTemplateSize returned : [" + err + "]");
@@ -140,6 +144,28 @@ public class BiometricHelper {
 
     public byte[] scanAndReturnISO() {
         return convertRawtoISO19794(scanForPrint());
+    }
+
+    public boolean matchPrints(byte[] p1, byte[] p2) {
+        boolean[] matched = new boolean[1];
+        int[] score = new int[1];
+        //Match ISO19794 Templates
+        System.out.println("--------");
+        matched[0] = false;
+        score[0] = 0;
+        System.out.println("Call SetTemplateFormat(ISO19794)");
+        err = sgfplib.SetTemplateFormat(SGFDxTemplateFormat.TEMPLATE_FORMAT_ISO19794);
+        System.out.println("SetTemplateFormat returned : [" + err + "]");
+        System.out.println("Call MatchIsoTemplates()");
+        err = sgfplib.MatchIsoTemplate(p1, 0, p2, 0, SGFDxSecurityLevel.SL_NORMAL, matched);
+        System.out.println("MatchISOTemplates returned : [" + err + "]");
+        System.out.println("ISO-1 <> ISO-2 Match Result : [" + matched[0] + "]");
+        System.out.println("Call GetIsoMatchingScore()");
+        err = sgfplib.GetIsoMatchingScore(p1, 0, p2, 0, score);
+        System.out.println("GetIsoMatchingScore returned : [" + err + "]");
+        System.out.println("ISO-1  <> ISO-2 Match Score : [" + score[0] + "]");
+
+        return matched[0];
     }
 
 

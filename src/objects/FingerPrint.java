@@ -4,17 +4,20 @@ public class FingerPrint {
 
     private int code;
     private String owner;
-    private byte[] ISO19794;
+    private byte[] ISO19794_one, ISO19794_two;
 
     public FingerPrint() {
     }
 
+    public FingerPrint(byte[] ISO19794_one, byte[] ISO19794_two) {
+        this.ISO19794_one = ISO19794_one;
+        this.ISO19794_two = ISO19794_two;
+    }
+
     @Override
     public String toString() {
-        return "FingerPrint{" +
-                "code=" + code +
-                ", owner='" + owner + '\'' +
-                '}';
+        return "\n" +
+                "Owner = " + owner;
     }
 
     public int getCode() {
@@ -33,11 +36,19 @@ public class FingerPrint {
         this.owner = owner;
     }
 
-    public byte[] getISO19794() {
-        return ISO19794;
+    public byte[] getISO19794_one() {
+        return ISO19794_one;
     }
 
-    public void setISO19794(byte[] ISO19794) {
-        this.ISO19794 = ISO19794;
+    public void setISO19794_one(byte[] ISO19794_one) {
+        this.ISO19794_one = ISO19794_one;
+    }
+
+    public byte[] getISO19794_two() {
+        return ISO19794_two;
+    }
+
+    public void setISO19794_two(byte[] ISO19794_two) {
+        this.ISO19794_two = ISO19794_two;
     }
 }

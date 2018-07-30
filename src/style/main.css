@@ -1,0 +1,27 @@
+.btn {
+    -fx-font-weight: bold;
+    -fx-padding: 5;
+    -fx-font-size: 12;
+    -fx-background-color: #072e66;
+    -fx-text-fill: #ffffff;
+}
+
+.btn:hover {
+    -fx-scale-y: 1.1;
+    -fx-scale-x: 1.1;
+}
+
+.body {
+    -fx-background-color: #d1eeff;
+}
+
+.fingerprintExists {
+    -fx-background-color: #b6ffb5
+}
+
+.fingerprintExists:filled:selected:focused {
+    -fx-background-color: linear-gradient(#328BDB 0%, #207BCF 25%, #1973C9 75%, #0A65BF 100%);
+    -fx-text-fill: white;
+    -fx-background-insets: 1;
+}
+
