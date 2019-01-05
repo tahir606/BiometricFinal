@@ -11,12 +11,18 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
+import jcode.BioZKTHelper;
+import jcode.CommonTasks;
 import jcode.OrcCon;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+
+import static dashboard.dashboardController.deviceNo;
 
 public class LoginController implements Initializable {
 
@@ -28,6 +34,8 @@ public class LoginController implements Initializable {
     private JFXButton login_btn;
     @FXML
     private Label error_message;
+    @FXML
+    private JFXButton btn_settings;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -36,13 +44,14 @@ public class LoginController implements Initializable {
 //        AnchorPane.setRightAnchor(error_message, 0.0);
         error_message.setAlignment(Pos.CENTER);     //Setting Error Message Center
 
-        pass_field.setOnAction(event -> {
-            String users = user_field.getText(), pass = pass_field.getText();
-
-            loginAction();
-        });
+        pass_field.setOnAction(event -> loginAction());
 
         login_btn.setOnAction(event -> loginAction());
+
+        Image image = new Image(getClass().getResourceAsStream("/login/Settings-icon.png"));
+        btn_settings.setGraphic(new ImageView(image));
+        btn_settings.setOnAction(event -> CommonTasks.inflateDialog("Settings", "/settings/activity_settings.fxml"));
+
     }
 
     private void loginAction() {
@@ -78,7 +87,20 @@ public class LoginController implements Initializable {
                         }
                         Stage stage = new Stage();
                         stage.setTitle("Biometric Receiving");
-                        stage.setScene(new Scene(root1,800, 450));
+                        stage.setScene(new Scene(root1, 800, 450));
+                        stage.setOnCloseRequest(event -> {
+                            switch (deviceNo) {
+                                case 1: {
+                                    break;
+                                }
+                                case 2: {
+                                    BioZKTHelper.FreeSensor();
+                                    break;
+                                }
+                                default:
+                                    break;
+                            }
+                        });
                         stage.show();
                     }
                 }

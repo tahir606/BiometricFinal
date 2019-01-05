@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="445.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="vouchers.VouchersController">
+   <children>
+      <VBox fx:id="vbox_vouchers" fillWidth="false" prefHeight="445.0" prefWidth="370.0" spacing="6.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox prefHeight="24.0" prefWidth="600.0" />
+            <JFXComboBox fx:id="combo_voucher" labelFloat="true" prefHeight="25.0" prefWidth="345.0" promptText="Select Voucher">
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </JFXComboBox>
+            <HBox prefHeight="12.0" prefWidth="600.0" />
+            <JFXTextField fx:id="txt_voucher" labelFloat="true" prefHeight="25.0" prefWidth="200.0" promptText="Voucher No">
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </JFXTextField>
+            <HBox prefHeight="12.0" prefWidth="600.0" />
+            <VBox fx:id="vbox_details" fillWidth="false" prefHeight="317.0" prefWidth="369.0" spacing="5.0" />
+         </children>
+      </VBox>
+      <ImageView fx:id="img_dp" fitHeight="140.0" fitWidth="170.0" layoutX="390.0" layoutY="117.0" pickOnBounds="true" preserveRatio="true" />
+       <Label fx:id="label_info" alignment="CENTER_RIGHT" layoutX="381.0" layoutY="376.0" prefHeight="17.0" prefWidth="208.0" textFill="#110080" AnchorPane.bottomAnchor="55.0" AnchorPane.rightAnchor="15.0">
+           <font>
+               <Font name="Calibri" size="14.0" />
+           </font>
+       </Label>
+      <JFXButton fx:id="btn_verify" buttonType="RAISED" layoutX="534.0" layoutY="406.0" prefHeight="27.0" prefWidth="140.0" style="-fx-background-color: #d0ebed;" text="Verify" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0">
+          <font>
+              <Font name="Calibri" size="14.0" />
+          </font>
+          <cursor>
+              <Cursor fx:constant="DEFAULT" />
+          </cursor>
+      </JFXButton>
+   </children>
+</AnchorPane>

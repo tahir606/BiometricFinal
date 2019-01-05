@@ -36,6 +36,15 @@
                             </children>
                         </HBox>
                   <HBox prefHeight="273.0" prefWidth="328.0" />
+                        <HBox prefHeight="0.0" prefWidth="437.0">
+                            <children>
+                                <Label fx:id="label_info" alignment="CENTER_RIGHT" prefHeight="17.0" prefWidth="447.0" textFill="#110080">
+                                    <font>
+                                        <Font name="Calibri" size="14.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </HBox>
                         <HBox alignment="BOTTOM_RIGHT" prefHeight="9.0" prefWidth="320.0">
                      <children>
                             <JFXButton fx:id="btn_add_one" buttonType="RAISED" mnemonicParsing="false" prefHeight="14.0" prefWidth="150.0" ripplerFill="BLACK" style="-fx-background-color: #d0ebed;" text="Add Fingerprint 1">

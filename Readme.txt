@@ -1,0 +1,1 @@
+1) install driver for the zkteco machine to avoid the libzkfp error on start

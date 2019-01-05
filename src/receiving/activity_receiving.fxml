@@ -55,6 +55,15 @@
                   </children>
                </HBox>
                     <HBox fx:id="hbox_data" prefHeight="273.0" prefWidth="328.0" />
+               <HBox prefHeight="0.0" prefWidth="437.0">
+                  <children>
+                     <Label fx:id="label_info" alignment="CENTER_RIGHT" prefHeight="17.0" prefWidth="447.0" textFill="#110080">
+                        <font>
+                           <Font name="Calibri" size="14.0" />
+                        </font>
+                     </Label>
+                  </children>
+               </HBox>
                     <HBox alignment="BOTTOM_RIGHT" prefHeight="7.0" prefWidth="267.0">
                         <children>
                             <JFXButton fx:id="btn_verify" buttonType="RAISED" mnemonicParsing="false" prefHeight="27.0" prefWidth="170.0" ripplerFill="BLACK" style="-fx-background-color: #d0ebed;" text="Verify">

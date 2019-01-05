@@ -4,6 +4,8 @@ import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXDatePicker;
 import com.jfoenix.controls.JFXTextField;
+import dashboard.dashboardController;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -19,10 +21,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import jcode.BiometricHelper;
-import jcode.CommonTasks;
-import jcode.OrcCon;
-import jcode.Toast;
+import jcode.*;
 import objects.Employee;
 
 import java.io.File;
@@ -52,20 +51,23 @@ public class ReceivingController implements Initializable {
     private HBox hbox_data;
     @FXML
     private VBox vbox_details;
+    @FXML
+    private Label label_info;
 
     private OrcCon orcCon;
-    private BiometricHelper bioHelper;
+    private BiometricMain bioMain;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         orcCon = new OrcCon();
-        bioHelper = new BiometricHelper();
+
+        bioMain = new BiometricMain(dashboardController.deviceNo);
 
         init();
 
         list_emp.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> populateDetails(newValue));
         combo_rec_type.getItems().addAll("Salaries");
-//        menu_register.setOnAction(event -> CommonTasks.inflateDialog("Register Print", "/registration/activity_registration.fxml"));
+//        menu_register.setOnAction(event -> CommonTasks.inflateDialog("Register Print", "/registration/activity_vouchers.fxml"));
 
         combo_rec_type.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null)
@@ -121,14 +123,18 @@ public class ReceivingController implements Initializable {
     private void populateSalaries() {
         JFXDatePicker datePicker = new JFXDatePicker();
         hbox_data.getChildren().addAll(datePicker);
-        btn_verify.setOnAction(event -> {
+        btn_verify.setOnAction(event -> new Thread(() -> {
             LocalDate date = datePicker.getValue();
             int year = date.getYear();
             String month = date.getMonth().toString();
             System.out.println("Month: " + month + "\n" + "Year: " + year);
-            if (verifyPrint())
+            if (verifyPrint()) {
                 orcCon.updateSalary(list_emp.getSelectionModel().getSelectedItem(), month, year);
-        });
+                Platform.runLater(() -> label_info.setText("Verification Successful"));
+            } else {
+                Platform.runLater(() -> label_info.setText("Verification Not Successful"));
+            }
+        }).start());
     }
 
 
@@ -161,23 +167,26 @@ public class ReceivingController implements Initializable {
         hbox_data.getChildren().clear();
         img_dp.setImage(null);
         vbox_details.getChildren().clear();
+        label_info.setText("");
     }
 
     private boolean verifyPrint() {
-        byte[] b = bioHelper.scanAndReturnISO();
+        byte[] b = bioMain.scanAndReturnISO(label_info);
         if (b == null) {
-            Toast.makeText((Stage) btn_verify.getScene().getWindow(), "An error occurred during thumb scanning!");
+            Platform.runLater(() -> Toast.makeText((Stage) btn_verify.getScene().getWindow(), "An error occurred during thumb scanning!"));
             return true;
         }
-        if (bioHelper.matchPrints(b, list_emp.getSelectionModel().getSelectedItem().getPrint().getISO19794_one())) {
-            Toast.makeText((Stage) btn_verify.getScene().getWindow(), "Verified Successfully!");
+        if (bioMain.matchPrints(b, list_emp.getSelectionModel().getSelectedItem().getPrint().getISO19794_one())) {
+            Platform.runLater(() -> Toast.makeText((Stage) btn_verify.getScene().getWindow(), "Verified Successfully!"));
             return true;
         } else {
-            if (bioHelper.matchPrints(b, list_emp.getSelectionModel().getSelectedItem().getPrint().getISO19794_two())) {
-                Toast.makeText((Stage) btn_verify.getScene().getWindow(), "Verified Successfully!");
+            if (list_emp.getSelectionModel().getSelectedItem().getPrint().getISO19794_two() == null)
+                return false;
+            if (bioMain.matchPrints(b, list_emp.getSelectionModel().getSelectedItem().getPrint().getISO19794_two())) {
+                Platform.runLater(() -> Toast.makeText((Stage) btn_verify.getScene().getWindow(), "Verified Successfully!"));
                 return true;
             } else {
-                Toast.makeText((Stage) btn_verify.getScene().getWindow(), "Invalid Verification!");
+                Platform.runLater(() -> Toast.makeText((Stage) btn_verify.getScene().getWindow(), "Invalid Verification!"));
                 return false;
             }
         }

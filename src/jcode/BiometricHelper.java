@@ -8,19 +8,25 @@ import java.io.PrintStream;
 
 public class BiometricHelper {
 
+    //Secugen Hamster Plus
+
     private static JSGFPLib sgfplib;
     private static SGDeviceInfoParam deviceInfo;
     private static byte kbBuffer[] = new byte[100];
     private static long err;
 
     public BiometricHelper() {
+
+    }
+
+    public boolean openDevice() {
         if (sgfplib == null) {
             sgfplib = new JSGFPLib();
             if ((sgfplib != null) && (sgfplib.jniLoadStatus != SGFDxErrorCode.SGFDX_ERROR_JNI_DLLLOAD_FAILED)) {
                 System.out.println(sgfplib);
             } else {
                 System.out.println("An error occurred while loading JSGFPLIB.DLL JNI Wrapper");
-                return;
+                return false;
             }
 
             // Init()
@@ -43,7 +49,7 @@ public class BiometricHelper {
             err = sgfplib.OpenDevice(SGPPPortAddr.AUTO_DETECT);
             System.out.println("OpenDevice returned : [" + err + "]");
             if (err != 0) {
-                return;
+                return false;
             }
             // GetError()
             err = sgfplib.GetLastError();
@@ -63,15 +69,16 @@ public class BiometricHelper {
             System.out.println("\tdeviceInfo.Gain:        [" + deviceInfo.gain + "]");
             System.out.println("\tdeviceInfo.ImageDPI:    [" + deviceInfo.imageDPI + "]");
             System.out.println("\tdeviceInfo.ImageHeight: [" + deviceInfo.imageHeight + "]");
-            System.out.println("\tdeviceInfo.ImageWidth:  [" + deviceInfo.imageWidth + "]");
+            System.out.println("\tdeviceInfo.ImageWidth:  ["  + deviceInfo.imageWidth + "]");
 
-//            setLed(true);
-//            try {
-//                Thread.sleep(500);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            setLed(false);
+            if (setLed(true) != 0) {
+                return false;
+            } else {
+                setLed(false);
+                return true;
+            }
+        } else {
+            return true;
         }
     }
 

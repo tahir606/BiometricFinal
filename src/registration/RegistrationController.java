@@ -3,6 +3,8 @@ package registration;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXTextField;
+import dashboard.dashboardController;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -18,10 +20,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import jcode.BiometricHelper;
-import jcode.CommonTasks;
-import jcode.OrcCon;
-import jcode.Toast;
+import jcode.*;
 import objects.Employee;
 import objects.FingerPrint;
 
@@ -46,17 +45,20 @@ public class RegistrationController implements Initializable {
     @FXML
     private Label label_name;
     @FXML
+    private Label label_info;
+    @FXML
     private ImageView img_dp;
     @FXML
     private VBox vbox_details;
 
     private OrcCon orcCon;
-    private BiometricHelper bioHelper;
+    //    private BiometricHelper bioHelper;
+    private BiometricMain bioMain;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         orcCon = new OrcCon();
-        bioHelper = new BiometricHelper();
+        bioMain = new BiometricMain(dashboardController.deviceNo);
 
         init();
 
@@ -85,8 +87,8 @@ public class RegistrationController implements Initializable {
             }
         });
 
-        btn_add_one.setOnAction(event -> saveFingerprint(btn_add_one, 1));
-        btn_add_two.setOnAction(event -> saveFingerprint(btn_add_two, 2));
+        btn_add_one.setOnAction(event -> saveFingerprint(btn_add_one, 1, label_info));
+        btn_add_two.setOnAction(event -> saveFingerprint(btn_add_two, 2, label_info));
     }
 
     private void init() {
@@ -132,25 +134,30 @@ public class RegistrationController implements Initializable {
 
     }
 
-    private void saveFingerprint(JFXButton btn, int no) {
-        byte[] b = bioHelper.scanAndReturnISO();
-        if (b == null) {
-            Toast.makeText((Stage) btn.getScene().getWindow(), "An error has occured during thumb scanning!");
-            return;
-        }
-        FingerPrint print = new FingerPrint();
-        if (no == 1)
-            print.setISO19794_one(b);
-        else if (no == 2)
-            print.setISO19794_two(b);
-        print.setCode(list_employees.getSelectionModel().getSelectedItem().getCode());
-        savePrintToDatabase(list_employees.getSelectionModel().getSelectedItem().getCode(), no, print);
+    private void saveFingerprint(JFXButton btn, int no, Label label) {
+        new Thread(() -> {
+            byte[] b = bioMain.scanAndReturnISO(label);
+
+            if (b == null) {
+                Platform.runLater(() -> label.setText("An error has occured during thumb scanning!"));
+                Platform.runLater(() -> Toast.makeText((Stage) btn.getScene().getWindow(), "An error has occured during thumb scanning!"));
+                return;
+            }
+            FingerPrint print = new FingerPrint();
+            if (no == 1)
+                print.setISO19794_one(b);
+            else if (no == 2)
+                print.setISO19794_two(b);
+            print.setCode(list_employees.getSelectionModel().getSelectedItem().getCode());
+            savePrintToDatabase(list_employees.getSelectionModel().getSelectedItem().getCode(), no, print);
 //        if (btn.getText().contains("Set Fingerprint"))
 //            orcCon.insertFingerPrint(print, no);
 //        else
 //            orcCon.updateFingerPrint(print, no);
-        Toast.makeText((Stage) btn.getScene().getWindow(), "Fingerprint registered successfully!");
-        btn.setText("Change Fingerprint " + no);
+            Platform.runLater(() -> label.setText("Fingerprint registered successfully!"));
+            Platform.runLater(() -> Toast.makeText((Stage) btn.getScene().getWindow(), "Fingerprint registered successfully!"));
+            Platform.runLater(() -> btn.setText("Change Fingerprint " + no));
+        }).start();
     }
 
     private void setSearch(FilteredList<Employee> filteredList) {
@@ -168,6 +175,7 @@ public class RegistrationController implements Initializable {
         btn_add_one.setVisible(false);
         btn_add_two.setVisible(false);
         vbox_details.getChildren().clear();
+        label_info.setText("");
     }
 
     private void savePrintToDatabase(int id, int no, FingerPrint fp) {

@@ -34,8 +34,8 @@ public class OrcCon {
         }
 
         ipAddress = "jdbc:oracle:thin:@" + "192.168.100.110:1521" + ":orcl";
-        user = "NOOR15";
-        pass = "NOOR";
+        user = "PKDOT";
+        pass = "PK786";
         try {
             con = DriverManager.getConnection(ipAddress, user, pass);
             return con;
@@ -48,7 +48,8 @@ public class OrcCon {
     }
 
     public boolean authenticateLogin(String username, String password) {
-        String query = "SELECT UNAME FROM USRACCOUNT " +
+//        String query = "SELECT UNAME FROM USRACCOUNT " +
+        String query = "SELECT UNAME FROM EMPLOYEE_MASTER " +
                 "WHERE UNAME = ? " +
                 "AND PASWD = ? ";
 
@@ -177,7 +178,8 @@ public class OrcCon {
     }
 
     public List<Employee> getAllEmployees() {
-        String query = "SELECT ECODE, ENAME, FNAME, PHONE FROM EMPLOYEE_MASTER WHERE LDATE IS NULL ORDER BY ENAME";
+        //PHONE FOR NOOR
+        String query = "SELECT ECODE, ENAME, FNAME, PCELL FROM EMPLOYEE_MASTER WHERE LDATE IS NULL ORDER BY ENAME";
 
         List<Employee> listOfEmployees = new ArrayList<>();
         try {
@@ -189,7 +191,7 @@ public class OrcCon {
                 emp.setCode(set.getInt("ECODE"));
                 emp.setName(set.getString("ENAME"));
                 emp.setFatherName(set.getString("FNAME"));
-                emp.setPhone(set.getString("PHONE"));
+                emp.setPhone(set.getString("PCELL"));
                 getEmployeeDetails(emp);
                 listOfEmployees.add(emp);
             }
@@ -203,8 +205,40 @@ public class OrcCon {
         return null;
     }
 
+    public Employee getCompleteEmployeeDetails(int code) {
+        String query = "SELECT ECODE, ENAME, FNAME, PHONE FROM EMPLOYEE_MASTER" +
+                " WHERE LDATE IS NULL " +
+                " AND ECODE = ? " +
+                " ORDER BY ENAME";
+
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            statement.setInt(1, code);
+            ResultSet set = statement.executeQuery();
+            Employee emp = null;
+            while (set.next()) {
+                emp = new Employee();
+                emp.setCode(set.getInt("ECODE"));
+                emp.setName(set.getString("ENAME"));
+                emp.setFatherName(set.getString("FNAME"));
+                emp.setPhone(set.getString("PHONE"));
+                getEmployeeDetails(emp);
+            }
+            set.close();
+            statement.close();
+
+            return emp;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    //Get thumb prints and photo
     public void getEmployeeDetails(Employee emp) {
-        String query = "SELECT (SELECT EISO1 FROM EMP_PRINTS EI WHERE EI.ECODE = ?) AS EISO1, (SELECT EISO2 FROM EMP_PRINTS EJ WHERE EJ.ECODE = ?) AS EISO2,(SELECT PHOTT FROM EMPLOYEE_IMAGES EP WHERE EP.ECODE = ?) AS PHOTT FROM DUAL";
+        String query = "SELECT (SELECT EISO1 FROM EMP_PRINTS EI WHERE EI.ECODE = ?) AS EISO1, " +
+                "(SELECT EISO2 FROM EMP_PRINTS EJ WHERE EJ.ECODE = ?) AS EISO2,(SELECT PHOTT FROM EMPLOYEE_IMAGES EP WHERE EP.ECODE = ?) AS PHOTT FROM DUAL";
 
         try {
             PreparedStatement statement = static_con.prepareStatement(query);
@@ -214,7 +248,7 @@ public class OrcCon {
 
             ResultSet set = statement.executeQuery();
             while (set.next()) {
-                emp.setPrint(new FingerPrint(set.getBytes("EISO1"),set.getBytes("EISO2")));
+                emp.setPrint(new FingerPrint(set.getBytes("EISO1"), set.getBytes("EISO2")));
                 Blob blob = set.getBlob("PHOTT");
                 if (blob != null) {
                     byte b[] = blob.getBytes(1, (int) blob.length());
@@ -238,7 +272,8 @@ public class OrcCon {
     }
 
     public void updateSalary(Employee emp, String month, int year) {
-        String query = "UPDATE SAVED_SALARY SET  BIOCHECK = 'Y' " +
+//        String query = "UPDATE SAVED_SALARY SET  BIOCHECK = 'Y' " + for noor
+        String query = "UPDATE EMPLOYEE_SALARY_MST SET  BIOCHECK = 'Y' " +
                 " WHERE ECODE = ? " +
                 " AND EDATE = ? ";
 
@@ -255,4 +290,68 @@ public class OrcCon {
             e.printStackTrace();
         }
     }
+
+    public String getCurrentYear() {
+        String query = "SELECT YRNO " +
+                " FROM   OLDINFO " +
+                " WHERE  CURN ='Y'";
+
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            ResultSet set = statement.executeQuery();
+            while (set.next()) {
+                return set.getString("YRNO");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return "";
+    }
+
+    public List<String> getVoucherList() {
+        String query = "SELECT SRNO, RMARKS " +
+                " FROM   VOUCH_LIST " +
+                " WHERE  fpver = 'Y'";
+        List<String> list = new ArrayList<>();
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            ResultSet set = statement.executeQuery();
+            while (set.next()) {
+                list.add(set.getString("SRNO") + " - " + set.getString("RMARKS"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public String getVoucherDetails(int srno, String yrno, int voucher) {
+        String query = "SELECT FP_DETAIL(" + srno + ",'" + yrno + "'," + voucher + ") FROM DUAL";
+        try {
+            PreparedStatement statement = static_con.prepareStatement(query);
+            ResultSet set = statement.executeQuery();
+            while (set.next()) {
+                return set.getString(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public void verifyVoucher(int srno, String yrno, int voucher) {
+        try {
+            CallableStatement storedProc = static_con.prepareCall("{call FP_VERIFIED(?, ?, ?)}");
+            storedProc.setInt(1, srno);
+            storedProc.setString(2, yrno);
+            storedProc.setInt(3, voucher);
+            storedProc.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

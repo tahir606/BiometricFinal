@@ -13,7 +13,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import jcode.BiometricHelper;
+import javafx.stage.Stage;
+import jcode.*;
+import settings.SettingsController;
 
 import java.io.IOException;
 import java.net.URL;
@@ -27,24 +29,41 @@ public class dashboardController implements Initializable {
     private BorderPane border_main;
 
     private static int currentPane;
+    public static int deviceNo;
 
-    BiometricHelper biohelper;
+    OrcCon orcCon;
+    BiometricMain bioMain;
+
+    FileHelper helper;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
         border_main.setCenter(new Label("Choose Option"));
 
-        receiveButton();
-        registerButton();
+        helper = new FileHelper();
+
+        if (helper.readYRNO() == null) {
+            orcCon = new OrcCon();
+            helper.writeYRNO(orcCon.getCurrentYear());
+        }
+
+        String deviceName = helper.readDeviceName();
+
+        if (deviceName.equals(SettingsController.SECUGEN_HAMSTER)) {
+            deviceNo = 1;
+        } else if (deviceName.equals(SettingsController.ZKTECO)) {
+            deviceNo = 2;
+        }
+
+        buttonSettings("Receive", "receiving/activity_receiving.fxml", 1);
+        buttonSettings("Vouchers", "vouchers/activity_vouchers.fxml", 2);
+        buttonSettings("Register", "registration/activity_registration.fxml", 3);
 
         new Thread(() -> {
-            biohelper = new BiometricHelper();
-            if (biohelper.setLed(true) != 0) {
+            bioMain = new BiometricMain(deviceNo);
+            if (!bioMain.open())
                 Platform.runLater(() -> border_main.setCenter(new Label("Cannot connect to biometric device")));
-            } else {
-                biohelper.setLed(false);
-            }
         }).start();
     }
 
@@ -78,11 +97,9 @@ public class dashboardController implements Initializable {
         new Thread(new Runnable() {
             @Override
             public void run() {
-
                 if (currentPane == pane) {
                     return;
                 }
-
                 Platform.runLater(() -> {
                     try {
                         border_main.setCenter(FXMLLoader.load(getClass().getClassLoader().getResource(path)));
@@ -95,16 +112,5 @@ public class dashboardController implements Initializable {
         }).start();
 
     }
-
-    JFXButton receiveBtn = new JFXButton("Receive");
-    JFXButton registerBtn = new JFXButton("Receive");
-
-    private void receiveButton() {
-        buttonSettings("Receive", "receiving/activity_receiving.fxml", 1);
-    }
-    private void registerButton() {
-        buttonSettings("Register", "registration/activity_registration.fxml", 2);
-    }
-
 
 }
